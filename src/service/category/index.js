@@ -10,5 +10,10 @@ export const useCategory = {
         headers:{
             "Authorization": `Bearer ${localStorage.getItem('token')}`
         }
+    }),
+    remove: (id)=> axios.delete(`/category/${id}`, {
+        headers:{
+            "Authorization": `Bearer ${localStorage.getItem('token')}`
+        }
     })
 }

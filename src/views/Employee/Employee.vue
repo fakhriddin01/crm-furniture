@@ -9,8 +9,6 @@ const router = useRouter();
 
 const store = employeeStore();
 
-const modal = ref(false);
-const lavozim = ref(false);
 const action = ref('');
 const toggleAction = (id) =>{
     if(action.value == id){
@@ -19,12 +17,42 @@ const toggleAction = (id) =>{
         action.value = id
     }
 };
-
 const cancelToggel= ()=>{
     action.value=''
-}
-const toggleDrop = ()=> lavozim.value = !lavozim.value;
+};
+
+const modal = ref(false);
 const toggleModal = () => modal.value = !modal.value;
+
+const lavozim = ref('');
+const filterByRole = ()=>{
+    if(lavozim.value == ''){
+        listUpdate();
+    } else{
+        useEmployee.listByRole(lavozim.value).then((res)=>{
+            store.state.list = res.data.staffs
+            pagination.total_page = res.data.total_pages
+            pagination.current_page = res.data.current_page
+            pagination.total_number = res.data.allStaff
+            pagination.page = pagination.current_page
+            if(pagination.page==1){
+                pagination.previous = true
+            }else{
+                pagination.previous = false
+
+            }
+            if(pagination.page == pagination.total_page){
+                pagination.next = true
+            }else{
+                pagination.next = false
+            }
+            lavozim.value=''
+        }).catch((error)=>{
+            toast.error(error.response.data.message)
+        })
+    }
+}
+
 
 const LIST = computed(()=> store.state.list)
 
@@ -112,18 +140,17 @@ const pagination = reactive({
     next: false,
 })
 
-const listUpdate=(page)=>{
+const listUpdate=(page=1)=>{
     useEmployee.list(page).then((res)=>{
         store.state.list = res.data.staffs
         pagination.total_page = res.data.total_pages
         pagination.current_page = res.data.current_page
         pagination.total_number = res.data.allStaff
         pagination.page = +pagination.current_page
-        if(pagination.page==1){
+        if(pagination.page == 1){
             pagination.previous = true
         }else{
             pagination.previous = false
-
         }
         if(pagination.page == pagination.total_page){
             pagination.next = true
@@ -285,39 +312,51 @@ onMounted(()=>{
                         </svg>
                         Xodim qo'shish
                     </button>
-                    <div class="flex items-center space-x-3 w-full md:w-auto">
-                        <div class="">
-                            <button @click="toggleDrop" id="actionsDropdownButton" data-dropdown-toggle="actionsDropdown" class="w-full md:w-auto flex items-center justify-center py-2 px-4 text-sm font-medium text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700" type="button">
+                    <div class="flex items-center space-x-3 w-full md:w-auto border p-1 bg-slate-300 rounded-md">
+                        <div>
+                            <!-- <button @click="toggleDrop" class="w-full md:w-auto flex items-center justify-center py-2 px-4 text-sm font-medium text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700" type="button">
                                 <svg class="-ml-1 mr-1.5 w-5 h-5" fill="currentColor" viewbox="0 0 20 20" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
                                     <path clip-rule="evenodd" fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" />
                                 </svg>
                                 Lavozim
-                            </button>
-                            <div id="actionsDropdown" class="z-10 absolute flex w-[110px] bg-white rounded divide-y divide-gray-100 shadow dark:bg-gray-700 dark:divide-gray-600" :class="lavozim ? '' : 'hidden'">
-                                <ul class="py-1 text-sm text-gray-700 dark:text-gray-200" aria-labelledby="actionsDropdownButton">
+                            </button> -->
+                            <!-- <div class="z-10  flex w-[110px] bg-white rounded divide-y divide-gray-100 shadow dark:bg-gray-700 dark:divide-gray-600" > -->
+                                
+                                <select v-model="lavozim" class="w-full md:w-auto flex items-center justify-center py-2 px-4 text-sm font-medium text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-2 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700" >
+                                    <option value="" selected class="block w-[110px] py-2 px-4 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">Lavozim</option>
+                                    <option value="SUPERADMIN" class="block w-[110px] py-2 px-4 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">Super Admin</option>
+                                    <option value="ADMIN" class="block w-[110px] py-2 px-4 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">Admin</option>
+                                    <option value="OPERATOR" class="block w-[110px] py-2 px-4 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">Operator</option>
+                                    <option value="CURRIER" class="block w-[110px] py-2 px-4 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">Eltuvchi</option>
+                                </select>
+                                
+                                <!-- <ul class="py-1 text-sm text-gray-700 dark:text-gray-200" aria-labelledby="actionsDropdownButton">
                                     <li>
-                                        <a href="#" class="block w-[110px] py-2 px-4 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">Admin</a>
+                                        <a class="block w-[110px] py-2 px-4 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">SUPERADMIN</a>
                                     </li>
                                     <li>
-                                        <a href="#" class="block py-2 px-4 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">Operator</a>
+                                        <a class="block w-[110px] py-2 px-4 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">ADMIN</a>
                                     </li>
                                     <li>
-                                        <a href="#" class="block py-2 px-4 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">Eltuvchi</a>
+                                        <a class="block py-2 px-4 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">OPERATOR</a>
                                     </li>
-                                </ul>
+                                    <li>
+                                        <a class="block py-2 px-4 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">CURRIER</a>
+                                    </li>
+                                </ul> -->
                             
-                            </div>
+                            <!-- </div> -->
                         </div>
-                        <button id="filterDropdownButton" data-dropdown-toggle="filterDropdown" class="w-full md:w-auto flex items-center justify-center py-2 px-4 text-sm font-medium text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700" type="button">
-                            <svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" class="h-4 w-4 mr-2 text-gray-400" viewbox="0 0 20 20" fill="currentColor">
+                        <button @click="filterByRole" class="w-full md:w-auto flex items-center justify-center py-2 px-3 text-sm font-medium text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-2 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700" type="button">
+                            <!-- <svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" class="h-4 w-4 mr-2 text-gray-400" viewbox="0 0 20 20" fill="currentColor">
                                 <path fill-rule="evenodd" d="M3 3a1 1 0 011-1h12a1 1 0 011 1v3a1 1 0 01-.293.707L12 11.414V15a1 1 0 01-.293.707l-2 2A1 1 0 018 17v-5.586L3.293 6.707A1 1 0 013 6V3z" clip-rule="evenodd" />
-                            </svg>
+                            </svg> -->
                             Saralash
-                            <svg class="-mr-1 ml-1.5 w-5 h-5" fill="currentColor" viewbox="0 0 20 20" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                            <!-- <svg class="-mr-1 ml-1.5 w-5 h-5" fill="currentColor" viewbox="0 0 20 20" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
                                 <path clip-rule="evenodd" fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" />
-                            </svg>
+                            </svg> -->
                         </button>
-                        <div id="filterDropdown" class="z-10 hidden w-48 p-3 bg-white rounded-lg shadow dark:bg-gray-700">
+                        <!-- <div class="z-10 hidden w-48 p-3 bg-white rounded-lg shadow dark:bg-gray-700">
                             <h6 class="mb-3 text-sm font-medium text-gray-900 dark:text-white">Holatni tanlang</h6>
                             <ul class="space-y-2 text-sm" aria-labelledby="filterDropdownButton">
                                 <li class="flex items-center">
@@ -330,7 +369,7 @@ onMounted(()=>{
                                 </li>
                                 
                             </ul>
-                        </div>
+                        </div> -->
                     </div>
                 </div>
             </div>
@@ -385,7 +424,7 @@ onMounted(()=>{
                 </span>
                 <ul class="inline-flex items-stretch -space-x-px">
                     <li>
-                        <button  @click="listUpdate(+pagination.page-1)" :disabled="pagination.previous" class="flex items-center justify-center h-full py-1.5 px-3 ml-0 text-gray-500 bg-white rounded-l-lg border border-gray-300 hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white">
+                        <button @click="listUpdate(+pagination.page-1)" :disabled="pagination.previous" class="flex items-center justify-center h-full py-1.5 px-3 ml-0 text-gray-500 bg-white rounded-l-lg border border-gray-300 hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white">
                             <span class="sr-only">Previous</span>
                             <svg class="w-5 h-5" aria-hidden="true" fill="currentColor" viewbox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
                                 <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" />
@@ -393,7 +432,7 @@ onMounted(()=>{
                         </button>
                     </li>
                     <li v-for="el in pagination.total_page" >
-                        <button @click="listUpdate(el)" class="flex items-center justify-center text-sm py-2 px-3 leading-tight text-gray-500 bg-white border border-gray-300 hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white" :class="(pagination.page === el) ? 'bg-blue-300' : ''"> {{ el }}  </button>
+                        <button @click="listUpdate(el)" class="flex items-center justify-center text-sm py-2 px-3 leading-tight text-gray-500 border border-gray-300 hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white" :class="{'bg-blue-300' : pagination.page == el}"> {{ el }}  </button>
                     </li>
                    
                     <li>

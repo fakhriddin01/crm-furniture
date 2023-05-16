@@ -21,5 +21,11 @@ export const useEmployee = {
         headers:{
             "Authorization": `Bearer ${localStorage.getItem('token')}`
         }
-    })
+    }),
+    listByRole: (role, num=1)=> axios.get(`/staff/role/${role}?page=${num}`, {
+        headers:{
+            "Authorization": `Bearer ${localStorage.getItem('token')}`
+        }
+    }),
+
 }
