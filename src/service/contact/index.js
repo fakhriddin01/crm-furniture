@@ -15,5 +15,10 @@ export const useContact = {
         headers:{
             "Authorization": `Bearer ${localStorage.getItem('token')}`
         }
-    })
+    }),
+    listByNumber : (number, num=1) => axios.get(`/contact/number/${number}?page=${num}`, {
+        headers:{
+            "Authorization": `Bearer ${localStorage.getItem('token')}`
+        }
+    }),
 }

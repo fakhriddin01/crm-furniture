@@ -10,9 +10,24 @@ const modal = ref(false);
 const popUp = ref(false);
 let computedList = ref([])
 
+
+
 const useLocalStorage = (id)=>{
     localStorage.setItem('number', id)
 }
+
+
+const action = ref('');
+const toggleAction = (id) =>{
+    if(action.value == id){
+        action.value = ''
+    }else{
+        action.value = id
+    }
+};
+const cancelToggel= ()=>{
+    action.value=''
+};
 
 const togglePopUp = (id) => {
     popUp.value = !popUp.value
@@ -40,9 +55,77 @@ const getId=()=>{
   
 }
 
-const updateList = () => {
-    useContact.list().then((res)=>{
+
+const search = reactive({
+    input: '',
+
+})
+
+const filterSearch = () =>{
+    if(search.input == ''){
+        updateList();
+    }else{
+        
+            useContact.listByNumber(search.input).then((res)=>{
+                store.state.list = res.data.contacts
+                pagination.total_page = res.data.total_pages
+                pagination.current_page = res.data.current_page
+                pagination.total_number = res.data.allContacts
+                pagination.page = pagination.current_page
+                if(pagination.page==1){
+                    pagination.previous = true
+                }else{
+                    pagination.previous = false
+
+                }
+                if(pagination.page == pagination.total_page){
+                    pagination.next = true
+                }else{
+                    pagination.next = false
+                }
+            }).catch((error)=>{
+                if(error.message == 'Request failed with status code 401' || error.message == 'token expired' || error.message == 'token not found'){
+                    router.push({name: 'login'})
+                }
+                else{
+                    toast.error('error');
+                }
+                console.log(error.response.data.message);
+            })
+  
+    }
+
+}
+
+
+
+const pagination = reactive({
+    total_page: 1,
+    current_page: 1,
+    total_number: 1,
+    limit: 10,
+    page: 1,
+    previous: false,
+    next: false,
+})
+
+const updateList = (page=1) => {
+    useContact.list(page).then((res)=>{
         store.state.list = res.data.contacts
+        pagination.total_page = res.data.total_pages
+        pagination.current_page = res.data.current_page
+        pagination.total_number = res.data.allContacts
+        pagination.page = +pagination.current_page
+        if(pagination.page == 1){
+            pagination.previous = true
+        }else{
+            pagination.previous = false
+        }
+        if(pagination.page == pagination.total_page){
+            pagination.next = true
+        }else{
+            pagination.next = false
+        }
     }).catch((error)=>{
         if(error.message == 'Request failed with status code 401' || error.message == 'token expired' || error.message == 'token not found'){
             router.push({name: 'login'})
@@ -97,7 +180,7 @@ onMounted(()=>{
     
 
     <!-- Main modal -->
-    <div id="defaultModal" tabindex="-1" aria-hidden="true" class="overflow-y-auto flex bg-[rgba(0,0,0,0.4)] overflow-x-hidden fixed top-0 right-0 left-0 z-50 justify-center items-center w-full md:inset-0 h-modal md:h-full" :class="modal ? '' : 'hidden'">
+    <div tabindex="-1" aria-hidden="true" class="overflow-y-auto flex bg-[rgba(0,0,0,0.4)] overflow-x-hidden fixed top-0 right-0 left-0 z-50 justify-center items-center w-full md:inset-0 h-modal md:h-full" :class="modal ? '' : 'hidden'">
         
         <div class="relative p-4 w-full max-w-2xl h-full md:h-auto">
             <!-- Modal content -->
@@ -150,7 +233,7 @@ onMounted(()=>{
                                     <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd" />
                                 </svg>
                             </div>
-                            <input type="text" id="simple-search" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full pl-10 p-2 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" placeholder="Qidiruv" required="">
+                            <input @input="filterSearch" v-model="search.input" type="text" id="simple-search" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full pl-10 p-2 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" placeholder="Qidiruv" required="">
                         </div>
                     </form>
                 </div>
@@ -228,24 +311,21 @@ onMounted(()=>{
                             <td v-if="el.status" class="px-4 py-3"> <span class="bg-green-300 rounded-md text-center p-2 block w-[60px]">Yangi</span> </td>
                             <td v-else class="px-4 py-3"> <span class="bg-red-300 rounded-md text-center p-2 block w-[80px]">O'chirilgan</span> </td>
                             <td class="px-4 py-3"><button @click="togglePopUp(el._id)" class="bg-blue-600 px-3 py-2 focus:ring-2 focus:ring-sky-400 duration-200 rounded-md text-white">Buyurtma olish</button></td>
-                            <td class="px-4 py-3 flex items-center justify-end">
-                                <button id="apple-imac-27-dropdown-button" data-dropdown-toggle="apple-imac-27-dropdown" class="inline-flex items-center p-0.5 text-sm font-medium text-center text-gray-500 hover:text-gray-800 rounded-lg focus:outline-none dark:text-gray-400 dark:hover:text-gray-100" type="button">
+                            <td @mouseleave="cancelToggel" class="px-4 py-3 flex flex-col items-center justify-center">
+                                <button @click="toggleAction(el._id)"  class="inline-flex items-center p-0.5 text-sm font-medium text-center text-gray-500 hover:text-gray-800 rounded-lg focus:outline-none dark:text-gray-400 dark:hover:text-gray-100" type="button">
                                     <svg class="w-5 h-5" aria-hidden="true" fill="currentColor" viewbox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
                                         <path d="M6 10a2 2 0 11-4 0 2 2 0 014 0zM12 10a2 2 0 11-4 0 2 2 0 014 0zM16 12a2 2 0 100-4 2 2 0 000 4z" />
                                     </svg>
                                 </button>
-                                <div id="apple-imac-27-dropdown" class="hidden z-10 w-44 bg-white rounded divide-y divide-gray-100 shadow dark:bg-gray-700 dark:divide-gray-600">
-                                    <ul class="py-1 text-sm text-gray-700 dark:text-gray-200" aria-labelledby="apple-imac-27-dropdown-button">
+                                <div v-if="action == el._id" class="z-10 absolute bottom-8 w-22 bg-white rounded divide-y divide-gray-100 shadow dark:bg-gray-700 dark:divide-gray-600" >
+                                    <ul class="py-0 text-sm text-gray-700 dark:text-gray-200">
                                         <li>
-                                            <a href="#" class="block py-2 px-4 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">Show</a>
+                                            <a @click="activate(el._id)" class="block py-1 px-4 text-green-400 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">Activate</a>
                                         </li>
                                         <li>
-                                            <a href="#" class="block py-2 px-4 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">Edit</a>
+                                            <a @click="deactivate(el._id)" class="block py-1 px-4 text-red-500 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">Deactivate</a>
                                         </li>
                                     </ul>
-                                    <div class="py-1">
-                                        <a href="#" class="block py-2 px-4 text-sm text-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 dark:text-gray-200 dark:hover:text-white">Delete</a>
-                                    </div>
                                 </div>
                             </td>
                         </tr>
@@ -254,31 +334,30 @@ onMounted(()=>{
             </div>
             <nav class="flex flex-col md:flex-row justify-between items-start md:items-center space-y-3 md:space-y-0 p-4" aria-label="Table navigation">
                 <span class="text-sm font-normal text-gray-500 dark:text-gray-400">
-                    Sahifa
-                    <span class="font-semibold text-gray-900 dark:text-white">1-10</span>
+                    <span class="font-semibold text-gray-900 dark:text-white">{{ pagination.total_number }}</span>
                     dan
-                    <span class="font-semibold text-gray-900 dark:text-white">1000</span>
+                    <span class="font-semibold text-gray-900 dark:text-white">{{(pagination.current_page-1)*pagination.limit+1}}-{{ ((pagination.current_page-1)*pagination.limit)+computedList.length}}</span>
                 </span>
                 <ul class="inline-flex items-stretch -space-x-px">
                     <li>
-                        <a href="#" class="flex items-center justify-center h-full py-1.5 px-3 ml-0 text-gray-500 bg-white rounded-l-lg border border-gray-300 hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white">
+                        <button @click="updateList(+pagination.page-1)" :disabled="pagination.previous" class="flex items-center justify-center h-full py-1.5 px-3 ml-0 text-gray-500 bg-white rounded-l-lg border border-gray-300 hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white">
                             <span class="sr-only">Previous</span>
                             <svg class="w-5 h-5" aria-hidden="true" fill="currentColor" viewbox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
                                 <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" />
                             </svg>
-                        </a>
+                        </button>
                     </li>
-                    <li>
-                        <a href="#" class="flex items-center justify-center text-sm py-2 px-3 leading-tight text-gray-500 bg-white border border-gray-300 hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white">1</a>
+                    <li v-for="el in pagination.total_page" >
+                        <button @click="updateList(el)" class="flex items-center justify-center text-sm py-2 px-3 leading-tight text-gray-500 border border-gray-300 hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white" :class="{'bg-blue-300' : pagination.page == el}"> {{ el }}  </button>
                     </li>
                    
                     <li>
-                        <a href="#" class="flex items-center justify-center h-full py-1.5 px-3 leading-tight text-gray-500 bg-white rounded-r-lg border border-gray-300 hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white">
+                        <button @click="updateList(+pagination.page+1)" :disabled="pagination.next" class="flex items-center justify-center h-full py-1.5 px-3 leading-tight text-gray-500 bg-white rounded-r-lg border border-gray-300 hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white">
                             <span class="sr-only">Next</span>
                             <svg class="w-5 h-5" aria-hidden="true" fill="currentColor" viewbox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
                                 <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
                             </svg>
-                        </a>
+                        </button>
                     </li>
                 </ul>
             </nav>
